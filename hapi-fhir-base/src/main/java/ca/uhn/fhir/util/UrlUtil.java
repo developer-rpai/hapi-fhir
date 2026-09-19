@@ -31,6 +31,7 @@ import com.google.common.net.PercentEscaper;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
+import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.instance.model.api.IPrimitiveType;
 
 import java.net.MalformedURLException;
@@ -680,6 +681,54 @@ public class UrlUtil {
 
 			return new CanonicalUrlParts(url, Optional.of(versionId));
 		}
+	}
+
+	/**
+	 * Reads the {@code url} and {@code version} properties off any resource and returns them as
+	 * {@link CanonicalUrlParts}, in a single call. A version packed into the URL (e.g.
+	 * <code>http://foo|123</code>) is parsed the same way {@link #parseCanonicalUrl(String, String)} does,
+	 * so a version carried by both the URL and the {@code version} property that does not agree is an
+	 * error.
+	 * <p>
+	 * This replaces the per-FHIR-version switches that were previously needed to read these two
+	 * properties off version-specific model classes.
+	 * </p>
+	 *
+	 * @param theFhirContext the context used to read the resource's children (must not be {@code null})
+	 * @param theResource    the resource to read, or {@code null} (yields empty parts)
+	 * @return the URL and version parts, never {@code null}
+	 * @throws InvalidRequestException if the URL carries a version which does not match the
+	 *                                {@code version} property
+	 * @since 8.14.0
+	 */
+	@Nonnull
+	public static CanonicalUrlParts parseCanonicalUrl(
+			@Nonnull FhirContext theFhirContext, @Nullable IBaseResource theResource) {
+		if (theResource == null) {
+			return new CanonicalUrlParts(null, Optional.empty());
+		}
+		RuntimeResourceDefinition resourceDef = theFhirContext.getResourceDefinition(theResource);
+		FhirTerser terser = theFhirContext.newTerser();
+		String url = getChildPrimitiveValueOrNull(resourceDef, terser, theResource, "url");
+		String version = getChildPrimitiveValueOrNull(resourceDef, terser, theResource, "version");
+		return parseCanonicalUrl(url, version);
+	}
+
+	/**
+	 * Reads a primitive child (e.g. {@code url}, {@code version}) by name, returning {@code null} when
+	 * the child does not exist on the resource definition (e.g. {@code version} on DSTU2 resources) or
+	 * has no value.
+	 */
+	@Nullable
+	private static String getChildPrimitiveValueOrNull(
+			RuntimeResourceDefinition theResourceDef,
+			FhirTerser theTerser,
+			IBaseResource theResource,
+			String theChildName) {
+		if (theResourceDef.getChildByName(theChildName) == null) {
+			return null;
+		}
+		return theTerser.getSinglePrimitiveValueOrNull(theResource, theChildName);
 	}
 
 	private static void throwInvalidRequestExceptionForNotValidUri(String theUri, Exception theCause) {

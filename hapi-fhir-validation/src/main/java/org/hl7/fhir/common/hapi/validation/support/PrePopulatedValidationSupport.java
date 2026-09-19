@@ -5,6 +5,7 @@ import ca.uhn.fhir.context.RuntimeResourceDefinition;
 import ca.uhn.fhir.context.support.IValidationSupport;
 import ca.uhn.fhir.context.support.ValidationSupportContext;
 import ca.uhn.fhir.util.ILockable;
+import ca.uhn.fhir.util.UrlUtil;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.apache.commons.compress.utils.Sets;
@@ -172,13 +173,7 @@ public class PrePopulatedValidationSupport extends BaseValidationSupport impleme
 		Validate.notNull(url, "the" + theResourceName + ".getUrl() must not return null");
 		Validate.notBlank(url, "the" + theResourceName + ".getUrl() must return a value");
 
-		String urlWithoutVersion;
-		int pipeIdx = url.indexOf('|');
-		if (pipeIdx != -1) {
-			urlWithoutVersion = url.substring(0, pipeIdx);
-		} else {
-			urlWithoutVersion = url;
-		}
+		String urlWithoutVersion = UrlUtil.parseCanonicalUrl(url).url();
 
 		HashSet<String> retVal = Sets.newHashSet(url, urlWithoutVersion);
 

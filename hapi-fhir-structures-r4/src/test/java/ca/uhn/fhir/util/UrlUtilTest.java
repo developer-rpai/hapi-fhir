@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.hl7.fhir.r4.model.CodeSystem;
+import org.hl7.fhir.r4.model.ValueSet;
 
 import java.util.List;
 import java.util.Map;
@@ -36,6 +38,71 @@ public class UrlUtilTest {
 		assertEquals("http://foo", UrlUtil.normalizeCanonicalUrlForComparison("http://foo|1.23#333"));
 		assertEquals("abc", UrlUtil.normalizeCanonicalUrlForComparison("abc"));
 		assertEquals("abc", UrlUtil.normalizeCanonicalUrlForComparison("abc/"));
+	}
+
+	@Test
+	void testParseCanonicalUrlFromResource_urlAndVersion() {
+		ValueSet valueSet = new ValueSet();
+		valueSet.setUrl("http://foo");
+		valueSet.setVersion("123");
+
+		UrlUtil.CanonicalUrlParts parts = UrlUtil.parseCanonicalUrl(myCtx, valueSet);
+
+		assertEquals("http://foo", parts.url());
+		assertEquals("123", parts.versionId().orElseThrow());
+	}
+
+	@Test
+	void testParseCanonicalUrlFromResource_versionPackedInUrl() {
+		ValueSet valueSet = new ValueSet();
+		valueSet.setUrl("http://foo|123");
+
+		UrlUtil.CanonicalUrlParts parts = UrlUtil.parseCanonicalUrl(myCtx, valueSet);
+
+		assertEquals("http://foo", parts.url());
+		assertEquals("123", parts.versionId().orElseThrow());
+	}
+
+	@Test
+	void testParseCanonicalUrlFromResource_urlOnly() {
+		ValueSet valueSet = new ValueSet();
+		valueSet.setUrl("http://foo");
+
+		UrlUtil.CanonicalUrlParts parts = UrlUtil.parseCanonicalUrl(myCtx, valueSet);
+
+		assertEquals("http://foo", parts.url());
+		assertFalse(parts.versionId().isPresent());
+	}
+
+	@Test
+	void testParseCanonicalUrlFromResource_codeSystem() {
+		CodeSystem codeSystem = new CodeSystem();
+		codeSystem.setUrl("http://bar");
+		codeSystem.setVersion("2.69");
+
+		UrlUtil.CanonicalUrlParts parts = UrlUtil.parseCanonicalUrl(myCtx, codeSystem);
+
+		assertEquals("http://bar", parts.url());
+		assertEquals("2.69", parts.versionId().orElseThrow());
+	}
+
+	@Test
+	void testParseCanonicalUrlFromResource_nullResource() {
+		UrlUtil.CanonicalUrlParts parts = UrlUtil.parseCanonicalUrl(myCtx, null);
+
+		assertNull(parts.url());
+		assertFalse(parts.versionId().isPresent());
+	}
+
+	@Test
+	void testParseCanonicalUrlFromResource_conflictingVersions_throws() {
+		ValueSet valueSet = new ValueSet();
+		valueSet.setUrl("http://foo|456");
+		valueSet.setVersion("123");
+
+		assertThatThrownBy(() -> UrlUtil.parseCanonicalUrl(myCtx, valueSet))
+				.isInstanceOf(InvalidRequestException.class)
+				.hasMessageContaining("does not match expected version");
 	}
 
 	@Test

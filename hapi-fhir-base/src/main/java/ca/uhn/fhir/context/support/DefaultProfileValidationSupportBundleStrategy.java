@@ -30,6 +30,7 @@ import ca.uhn.fhir.rest.api.EncodingEnum;
 import ca.uhn.fhir.util.BundleUtil;
 import ca.uhn.fhir.util.ClasspathUtil;
 import ca.uhn.fhir.util.FhirTerser;
+import ca.uhn.fhir.util.UrlUtil;
 import jakarta.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.instance.model.api.IBaseBundle;
@@ -231,13 +232,9 @@ class DefaultProfileValidationSupportBundleStrategy implements IValidationSuppor
 			}
 
 			// System can take the form "http://url|version"
-			String system = theSystem;
-			String version = null;
-			int pipeIdx = system.indexOf('|');
-			if (pipeIdx > 0) {
-				version = system.substring(pipeIdx + 1);
-				system = system.substring(0, pipeIdx);
-			}
+			UrlUtil.CanonicalUrlParts systemAndVersion = UrlUtil.parseCanonicalUrl(theSystem);
+			String system = systemAndVersion.url();
+			String version = systemAndVersion.versionId().orElse(null);
 
 			IBaseResource candidate;
 			if (codeSystem) {

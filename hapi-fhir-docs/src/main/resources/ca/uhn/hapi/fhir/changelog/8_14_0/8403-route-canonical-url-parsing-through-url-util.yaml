@@ -1,0 +1,8 @@
+---
+type: change
+issue: 8403
+title: "Canonical URL parsing in the remaining validation and terminology code paths is now routed
+  through `UrlUtil.parseCanonicalUrl`, and a new `UrlUtil.parseCanonicalUrl(FhirContext, IBaseResource)`
+  helper reads the `url` and `version` properties off any resource. This replaces the per-FHIR-version
+  switches that were previously needed in `CommonCodeSystemsTerminologyService.getValueSetUrl` and
+  `getValueSetVersion`."

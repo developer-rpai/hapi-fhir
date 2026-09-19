@@ -2268,15 +2268,14 @@ public class TermReadSvcImpl implements ITermReadSvc {
 
 		List<TermValueSetConcept> retVal = new ArrayList<>();
 		Optional<TermValueSetConcept> optionalTermValueSetConcept;
-		int versionIndex = theSystem.indexOf(OUR_PIPE_CHARACTER);
-		if (versionIndex >= 0) {
-			String systemUrl = theSystem.substring(0, versionIndex);
-			String systemVersion = theSystem.substring(versionIndex + 1);
+		UrlUtil.CanonicalUrlParts systemAndVersion = UrlUtil.parseCanonicalUrl(theSystem);
+		String systemUrl = systemAndVersion.url();
+		if (systemAndVersion.versionId().isPresent()) {
 			optionalTermValueSetConcept = myValueSetConceptDao.findByValueSetResourcePidSystemAndCodeWithVersion(
-					theResourcePid.getId(), systemUrl, systemVersion, theCode);
+					theResourcePid.getId(), systemUrl, systemAndVersion.versionId().get(), theCode);
 		} else {
 			optionalTermValueSetConcept = myValueSetConceptDao.findByValueSetResourcePidSystemAndCode(
-					theResourcePid.getId(), theSystem, theCode);
+					theResourcePid.getId(), systemUrl, theCode);
 		}
 		optionalTermValueSetConcept.ifPresent(retVal::add);
 		return retVal;

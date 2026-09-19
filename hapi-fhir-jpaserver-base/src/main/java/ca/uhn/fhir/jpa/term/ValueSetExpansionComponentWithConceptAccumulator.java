@@ -25,6 +25,7 @@ import ca.uhn.fhir.jpa.entity.TermConceptDesignation;
 import ca.uhn.fhir.jpa.term.ex.ExpansionTooCostlyException;
 import ca.uhn.fhir.model.api.annotation.Block;
 import ca.uhn.fhir.rest.server.exceptions.InternalErrorException;
+import ca.uhn.fhir.util.UrlUtil;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
@@ -168,16 +169,9 @@ public class ValueSetExpansionComponentWithConceptAccumulator extends ValueSet.V
 	public void excludeConcept(String theSystem, String theCode) {
 		myAddedCodes.remove(new SystemAndCode(theSystem, theCode));
 
-		String excludeSystem;
-		String excludeSystemVersion;
-		int versionSeparator = theSystem.indexOf("|");
-		if (versionSeparator > -1) {
-			excludeSystemVersion = theSystem.substring(versionSeparator + 1);
-			excludeSystem = theSystem.substring(0, versionSeparator);
-		} else {
-			excludeSystem = theSystem;
-			excludeSystemVersion = null;
-		}
+		UrlUtil.CanonicalUrlParts systemAndVersion = UrlUtil.parseCanonicalUrl(theSystem);
+		String excludeSystem = systemAndVersion.url();
+		String excludeSystemVersion = systemAndVersion.versionId().orElse(null);
 		if (excludeSystemVersion != null) {
 			this.getContains()
 					.removeIf(t -> excludeSystem.equals(t.getSystem())

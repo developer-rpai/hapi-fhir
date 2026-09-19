@@ -19,6 +19,7 @@ import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import ca.uhn.fhir.util.BundleUtil;
 import ca.uhn.fhir.util.Logs;
 import ca.uhn.fhir.util.ParametersUtil;
+import ca.uhn.fhir.util.UrlUtil;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
@@ -577,13 +578,13 @@ public class RemoteTerminologyServiceValidationSupport extends BaseTerminologySe
 
 		IQuery<IBaseBundle> valueSetQuery = client.search().forResource("ValueSet");
 
-		int pipeIdx = theValueSetUrl.indexOf("|");
-		if (pipeIdx < 0) {
-			valueSetQuery.where(CodeSystem.URL.matches().value(theValueSetUrl));
+		UrlUtil.CanonicalUrlParts valueSetUrlParts = UrlUtil.parseCanonicalUrl(theValueSetUrl);
+		if (valueSetUrlParts.versionId().isEmpty()) {
+			valueSetQuery.where(CodeSystem.URL.matches().value(valueSetUrlParts.url()));
 		} else {
-			valueSetQuery.where(CodeSystem.URL.matches().value(theValueSetUrl.substring(0, pipeIdx)));
+			valueSetQuery.where(CodeSystem.URL.matches().value(valueSetUrlParts.url()));
 			valueSetQuery.where(
-					new StringClientParam("version").matches().value(theValueSetUrl.substring(pipeIdx + 1)));
+					new StringClientParam("version").matches().value(valueSetUrlParts.versionId().get()));
 		}
 
 		if (theSummaryParam != null) {

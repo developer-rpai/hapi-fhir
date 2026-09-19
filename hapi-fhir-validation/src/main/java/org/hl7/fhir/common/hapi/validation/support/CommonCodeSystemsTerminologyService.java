@@ -10,6 +10,7 @@ import ca.uhn.fhir.context.support.ValidationSupportContext;
 import ca.uhn.fhir.i18n.Msg;
 import ca.uhn.fhir.util.ClasspathUtil;
 import ca.uhn.fhir.util.Logs;
+import ca.uhn.fhir.util.UrlUtil;
 import ca.uhn.hapi.converters.canonical.VersionCanonicalizer;
 import com.google.common.annotations.VisibleForTesting;
 import jakarta.annotation.Nonnull;
@@ -17,7 +18,6 @@ import jakarta.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.fhir.ucum.UcumEssenceService;
 import org.fhir.ucum.UcumException;
-import org.hl7.fhir.dstu2.model.ValueSet;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.CodeSystem;
 import org.hl7.fhir.r4.model.CodeSystem.CodeSystemContentMode;
@@ -494,39 +494,7 @@ public class CommonCodeSystemsTerminologyService implements IValidationSupport {
 	}
 
 	public static String getValueSetUrl(FhirContext theFhirContext, @Nonnull IBaseResource theValueSet) {
-		String url;
-		FhirVersionEnum structureFhirVersionEnum = getFhirVersionEnum(theFhirContext, theValueSet);
-		switch (structureFhirVersionEnum) {
-			case DSTU2: {
-				url = ((ca.uhn.fhir.model.dstu2.resource.ValueSet) theValueSet).getUrl();
-				break;
-			}
-			case DSTU2_HL7ORG: {
-				url = ((ValueSet) theValueSet).getUrl();
-				break;
-			}
-			case DSTU3: {
-				url = ((org.hl7.fhir.dstu3.model.ValueSet) theValueSet).getUrl();
-				break;
-			}
-			case R4: {
-				url = ((org.hl7.fhir.r4.model.ValueSet) theValueSet).getUrl();
-				break;
-			}
-			case R4B: {
-				url = ((org.hl7.fhir.r4b.model.ValueSet) theValueSet).getUrl();
-				break;
-			}
-			case R5: {
-				url = ((org.hl7.fhir.r5.model.ValueSet) theValueSet).getUrl();
-				break;
-			}
-			case DSTU2_1:
-			default:
-				throw new IllegalArgumentException(
-						Msg.code(695) + "Can not handle version: " + structureFhirVersionEnum);
-		}
-		return url;
+		return UrlUtil.parseCanonicalUrl(theFhirContext, theValueSet).url();
 	}
 
 	public static String getCodeSystemUrl(@Nonnull FhirContext theFhirContext, @Nonnull IBaseResource theCodeSystem) {
@@ -554,31 +522,7 @@ public class CommonCodeSystemsTerminologyService implements IValidationSupport {
 	}
 
 	public static String getValueSetVersion(@Nonnull FhirContext theFhirContext, @Nonnull IBaseResource theValueSet) {
-		String version;
-		switch (getFhirVersionEnum(theFhirContext, theValueSet)) {
-			case DSTU3: {
-				version = ((org.hl7.fhir.dstu3.model.ValueSet) theValueSet).getVersion();
-				break;
-			}
-			case R4: {
-				version = ((org.hl7.fhir.r4.model.ValueSet) theValueSet).getVersion();
-				break;
-			}
-			case R4B: {
-				version = ((org.hl7.fhir.r4b.model.ValueSet) theValueSet).getVersion();
-				break;
-			}
-			case R5: {
-				version = ((org.hl7.fhir.r5.model.ValueSet) theValueSet).getVersion();
-				break;
-			}
-			case DSTU2:
-			case DSTU2_HL7ORG:
-			case DSTU2_1:
-			default:
-				version = null;
-		}
-		return version;
+		return UrlUtil.parseCanonicalUrl(theFhirContext, theValueSet).versionId().orElse(null);
 	}
 
 	/**

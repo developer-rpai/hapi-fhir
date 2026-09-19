@@ -9,6 +9,7 @@ import ca.uhn.fhir.context.support.ValidationSupportContext;
 import ca.uhn.fhir.context.support.ValueSetExpansionOptions;
 import ca.uhn.fhir.i18n.Msg;
 import ca.uhn.fhir.util.FhirVersionIndependentConcept;
+import ca.uhn.fhir.util.UrlUtil;
 import ca.uhn.hapi.converters.canonical.VersionCanonicalizer;
 import com.google.common.annotations.VisibleForTesting;
 import jakarta.annotation.Nonnull;
@@ -758,18 +759,9 @@ public class InMemoryTerminologyServerValidationSupport extends BaseTerminologyS
 			ValueSetAndMessages theResponseBuilder)
 			throws ExpansionCouldNotBeCompletedInternallyException {
 
-		String wantSystemUrl = null;
-		String wantSystemVersion = null;
-
-		if (theWantSystemUrlAndVersion != null) {
-			int versionIndex = theWantSystemUrlAndVersion.indexOf(OUR_PIPE_CHARACTER);
-			if (versionIndex > -1) {
-				wantSystemUrl = theWantSystemUrlAndVersion.substring(0, versionIndex);
-				wantSystemVersion = theWantSystemUrlAndVersion.substring(versionIndex + 1);
-			} else {
-				wantSystemUrl = theWantSystemUrlAndVersion;
-			}
-		}
+		UrlUtil.CanonicalUrlParts wantSystem = UrlUtil.parseCanonicalUrl(theWantSystemUrlAndVersion);
+		String wantSystemUrl = wantSystem.url();
+		String wantSystemVersion = wantSystem.versionId().orElse(null);
 
 		String includeOrExcludeConceptSystemUrl = theInclude.getSystem();
 		String includeOrExcludeConceptSystemVersion = theInclude.getVersion();
